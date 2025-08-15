@@ -6,6 +6,7 @@ from fastapi import Response
 from controllers.account_file import AccountFile
 
 from models.event import EventModel
+from models.account import AccountModel
 
 from models.event import EVENT_TYPE_DEPOSIT
 from models.event import EVENT_TYPE_TRANSFER
@@ -77,13 +78,12 @@ class Account:
 
         AccountFile.write_file(accounts)
 
+        account: AccountModel = AccountModel(id=event.destination, amout=accounts[event.destination])
+
         response.status_code = status.HTTP_201_CREATED
 
         return {
-            "destination": {
-                "id": event.destination,
-                "balance": accounts[event.destination]
-            }
+            "destination": account.model_dump()
         }
 
     def __withdraw(self, response: Response, event: EventModel, accounts: dict) -> dict:
@@ -94,13 +94,12 @@ class Account:
 
         AccountFile.write_file(accounts)
 
+        account: AccountModel = AccountModel(id=event.origin, amout=accounts[event.origin])
+
         response.status_code = status.HTTP_201_CREATED
 
         return {
-            "origin": {
-                "id": event.origin,
-                "balance": accounts[event.origin]
-            }
+            "origin": account.model_dump()
         }
 
     def __transfer(self, response: Response, event: EventModel, accounts: dict) -> dict:
@@ -112,15 +111,12 @@ class Account:
 
         AccountFile.write_file(accounts)
 
+        origin_account: AccountModel = AccountModel(id=event.origin, amout=accounts[event.origin])
+        destination_account: AccountModel = AccountModel(id=event.destination, amout=accounts[event.destination])
+
         response.status_code = status.HTTP_201_CREATED
 
         return {
-            "origin": {
-                "id": event.origin,
-                "balance": accounts[event.origin]
-            },
-            "destination": {
-                "id": event.destination,
-                "balance": accounts[event.destination]
-            }
+            "origin": origin_account.model_dump(),
+            "destination": destination_account.model_dump()
         }
