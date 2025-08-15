@@ -31,63 +31,13 @@ class Account:
             accounts: dict = AccountFile.read_file()
 
             if event.type == EVENT_TYPE_DEPOSIT:
-                if not accounts.get(event.destination):
-                    accounts.update({event.destination: event.amount})
-
-                else:
-                    accounts[event.destination] = accounts[event.destination] + event.amount
-
-                AccountFile.write_file(accounts)
-
-                response.status_code = status.HTTP_201_CREATED
-
-                return {
-                    "destination": {
-                        "id": event.destination,
-                        "balance": accounts[event.destination]
-                    }
-                }
+                return self.__deposit(response, event, accounts)
 
             elif event.type == EVENT_TYPE_WITHDRAW:
-                if not accounts.get(event.origin):
-                    raise Exception("Conta não encontrada")
-
-                else:
-                    accounts[event.origin] = accounts[event.origin] - event.amount
-
-                AccountFile.write_file(accounts)
-
-                response.status_code = status.HTTP_201_CREATED
-
-                return {
-                    "origin": {
-                        "id": event.origin,
-                        "balance": accounts[event.origin]
-                    }
-                }
+                return self.__withdraw(response, event, accounts)
 
             elif event.type == EVENT_TYPE_TRANSFER:
-                if accounts.get(event.origin) is None or accounts.get(event.destination) is None:
-                    raise Exception("Conta não encontrada")
-
-                else:
-                    accounts[event.origin] = accounts[event.origin] - event.amount
-                    accounts[event.destination] = accounts[event.destination] + event.amount
-
-                AccountFile.write_file(accounts)
-
-                response.status_code = status.HTTP_201_CREATED
-
-                return {
-                    "origin": {
-                        "id": event.origin,
-                        "balance": accounts[event.origin]
-                    },
-                    "destination": {
-                        "id": event.destination,
-                        "balance": accounts[event.destination]
-                    }
-                }
+                return self.__transfer(response, event, accounts)
 
         except Exception as e:
             response.status_code = status.HTTP_404_NOT_FOUND
@@ -117,3 +67,60 @@ class Account:
         response.status_code = status.HTTP_200_OK
 
         return accounts[account_id]
+
+    def __deposit(self, response: Response, event: EventModel, accounts: dict) -> dict:
+        if not accounts.get(event.destination):
+            accounts.update({event.destination: event.amount})
+
+        else:
+            accounts[event.destination] = accounts[event.destination] + event.amount
+
+        AccountFile.write_file(accounts)
+
+        response.status_code = status.HTTP_201_CREATED
+
+        return {
+            "destination": {
+                "id": event.destination,
+                "balance": accounts[event.destination]
+            }
+        }
+
+    def __withdraw(self, response: Response, event: EventModel, accounts: dict) -> dict:
+        if not accounts.get(event.origin):
+            raise Exception("Conta não encontrada")
+
+        accounts[event.origin] = accounts[event.origin] - event.amount
+
+        AccountFile.write_file(accounts)
+
+        response.status_code = status.HTTP_201_CREATED
+
+        return {
+            "origin": {
+                "id": event.origin,
+                "balance": accounts[event.origin]
+            }
+        }
+
+    def __transfer(self, response: Response, event: EventModel, accounts: dict) -> dict:
+        if accounts.get(event.origin) is None or accounts.get(event.destination) is None:
+            raise Exception("Conta não encontrada")
+
+        accounts[event.origin] = accounts[event.origin] - event.amount
+        accounts[event.destination] = accounts[event.destination] + event.amount
+
+        AccountFile.write_file(accounts)
+
+        response.status_code = status.HTTP_201_CREATED
+
+        return {
+            "origin": {
+                "id": event.origin,
+                "balance": accounts[event.origin]
+            },
+            "destination": {
+                "id": event.destination,
+                "balance": accounts[event.destination]
+            }
+        }
